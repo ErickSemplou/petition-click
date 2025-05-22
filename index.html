@@ -89,71 +89,92 @@
     <!-- Петиції буде додано через JS -->
   </div>
 
-  <script>
-    const petitions = [
-      { id: "kinash", name: "Роман Кінаш 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/245246" },
-      { id: "lystopad", name: "Антон Листопад", url: "https://petition.president.gov.ua/petition/245654" },
-      { id: "klekach", name: "Василь Клекач", url: "https://petition.president.gov.ua/petition/244660" },
-      { id: "hned", name: "Олег Гнед", url: "https://petition.president.gov.ua/petition/244852" },
-      { id: "buzykov", name: "Юрій Бузіков 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244036" },
-      { id: "tanasyuk", name: "Богдан Танасюк 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243292" },
-      { id: "valko", name: "Руслан Валько 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244108" },
-      { id: "chmut", name: "Юрій Чмут 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243630" },
-    ];
+  <!-- ... Ваш HTML без змін до <script> ... -->
 
-    const todayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const STORAGE_KEY = 'petitionStats';
+<script>
+  const petitions = [
+    { id: "kinash", name: "Роман Кінаш 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/245246" },
+    { id: "lystopad", name: "Антон Листопад", url: "https://petition.president.gov.ua/petition/245654" },
+    { id: "klekach", name: "Василь Клекач", url: "https://petition.president.gov.ua/petition/244660" },
+    { id: "hned", name: "Олег Гнед", url: "https://petition.president.gov.ua/petition/244852" },
+    { id: "buzykov", name: "Юрій Бузіков 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244036" },
+    { id: "tanasyuk", name: "Богдан Танасюк 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243292" },
+    { id: "valko", name: "Руслан Валько 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244108" },
+    { id: "chmut", name: "Юрій Чмут 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243630" },
+  ];
 
-    function loadStats() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      let data = raw ? JSON.parse(raw) : {};
+  const API_URL = "http://localhost:3000";
 
-      if (data.date !== todayKey) {
-        data = {
-          date: todayKey,
-          visitors: 0,
-          totalClicks: 0,
-          petitionClicks: {},
-        };
-      }
+  let stats = {
+    visitors: 0,
+    totalClicks: 0,
+    petitionClicks: {},
+  };
 
-      return data;
+  async function fetchStats() {
+    try {
+      const res = await fetch(API_URL + "/stats");
+      const data = await res.json();
+      stats = data;
+      updateUI();
+    } catch (e) {
+      console.error("Error fetching stats:", e);
     }
+  }
 
-    function saveStats(data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  async function sendVisit() {
+    try {
+      await fetch(API_URL + "/visit", { method: "POST" });
+      await fetchStats();
+    } catch (e) {
+      console.error("Error sending visit:", e);
     }
+  }
 
-    const stats = loadStats();
-    stats.visitors += 1;
-    saveStats(stats);
+  async function trackClick(id) {
+    try {
+      await fetch(API_URL + "/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      await fetchStats();
+    } catch (e) {
+      console.error("Error tracking click:", e);
+    }
+  }
 
+  function updateUI() {
     document.getElementById('visitor-count').textContent = stats.visitors;
     document.getElementById('total-clicks').textContent = stats.totalClicks;
 
+    petitions.forEach(p => {
+      const count = stats.petitionClicks[p.id] || 0;
+      const span = document.getElementById(`click-${p.id}`);
+      if (span) span.textContent = count;
+    });
+  }
+
+  function renderPetitions() {
     const petitionList = document.getElementById("petition-list");
-
-    petitions.forEach((p) => {
-      const clicks = stats.petitionClicks[p.id] || 0;
-
+    petitionList.innerHTML = "";
+    petitions.forEach(p => {
       const div = document.createElement('div');
       div.className = 'petition';
       div.innerHTML = `
         <div><strong>${p.name}</strong></div>
-        <a href="${p.url}" target="_blank" onclick="trackClick('${p.id}')">${p.url}</a>
-        <div class="clicks">Переходів сьогодні: <span id="click-${p.id}">${clicks}</span></div>
+        <a href="${p.url}" target="_blank" rel="noopener noreferrer" onclick="trackClick('${p.id}')">${p.url}</a>
+        <div class="clicks">Переходів сьогодні: <span id="click-${p.id}">0</span></div>
       `;
       petitionList.appendChild(div);
     });
+  }
 
-    function trackClick(id) {
-      stats.totalClicks += 1;
-      stats.petitionClicks[id] = (stats.petitionClicks[id] || 0) + 1;
-      saveStats(stats);
+  // Запускаємо
+  renderPetitions();
+  sendVisit(); // повідомляємо сервер про нового відвідувача
+  fetchStats(); // отримуємо початкові дані
+</script>
 
-      document.getElementById('total-clicks').textContent = stats.totalClicks;
-      document.getElementById(`click-${id}`).textContent = stats.petitionClicks[id];
-    }
-  </script>
 </body>
 </html>
