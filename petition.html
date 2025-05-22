@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Вшанування Героїв України</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #1a73e8;
+      color: white;
+      padding: 20px 10px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .counter {
+      background: #fff;
+      margin: 10px auto;
+      padding: 10px;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .petition-list {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 10px;
+    }
+
+    .petition {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .petition a {
+      color: #1a73e8;
+      text-decoration: none;
+      font-weight: bold;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .petition a:hover {
+      text-decoration: underline;
+    }
+
+    .petition .clicks {
+      font-size: 14px;
+      color: #555;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>💔 Вічна памʼять Героям України 💔</h1>
+  </header>
+
+  <div class="counter">
+    👁 Загальна кількість відвідувачів сьогодні: <span id="visitor-count">0</span><br>
+    ✅ Загальні переходи за петиціями: <span id="total-clicks">0</span>
+  </div>
+
+  <div class="petition-list" id="petition-list">
+    <!-- Петиції буде додано через JS -->
+  </div>
+
+  <script>
+    const petitions = [
+      { id: "kinash", name: "Роман Кінаш 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/245246" },
+      { id: "lystopad", name: "Антон Листопад", url: "https://petition.president.gov.ua/petition/245654" },
+      { id: "klekach", name: "Василь Клекач", url: "https://petition.president.gov.ua/petition/244660" },
+      { id: "hned", name: "Олег Гнед", url: "https://petition.president.gov.ua/petition/244852" },
+      { id: "buzykov", name: "Юрій Бузіков 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244036" },
+      { id: "tanasyuk", name: "Богдан Танасюк 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243292" },
+      { id: "valko", name: "Руслан Валько 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244108" },
+      { id: "chmut", name: "Юрій Чмут 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243630" },
+    ];
+
+    const todayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const STORAGE_KEY = 'petitionStats';
+
+    function loadStats() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      let data = raw ? JSON.parse(raw) : {};
+
+      if (data.date !== todayKey) {
+        data = {
+          date: todayKey,
+          visitors: 0,
+          totalClicks: 0,
+          petitionClicks: {},
+        };
+      }
+
+      return data;
+    }
+
+    function saveStats(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    const stats = loadStats();
+    stats.visitors += 1;
+    saveStats(stats);
+
+    document.getElementById('visitor-count').textContent = stats.visitors;
+    document.getElementById('total-clicks').textContent = stats.totalClicks;
+
+    const petitionList = document.getElementById("petition-list");
+
+    petitions.forEach((p) => {
+      const clicks = stats.petitionClicks[p.id] || 0;
+
+      const div = document.createElement('div');
+      div.className = 'petition';
+      div.innerHTML = `
+        <div><strong>${p.name}</strong></div>
+        <a href="${p.url}" target="_blank" onclick="trackClick('${p.id}')">${p.url}</a>
+        <div class="clicks">Переходів сьогодні: <span id="click-${p.id}">${clicks}</span></div>
+      `;
+      petitionList.appendChild(div);
+    });
+
+    function trackClick(id) {
+      stats.totalClicks += 1;
+      stats.petitionClicks[id] = (stats.petitionClicks[id] || 0) + 1;
+      saveStats(stats);
+
+      document.getElementById('total-clicks').textContent = stats.totalClicks;
+      document.getElementById(`click-${id}`).textContent = stats.petitionClicks[id];
+    }
+  </script>
+</body>
+</html>
