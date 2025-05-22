@@ -89,92 +89,58 @@
     <!-- Петиції буде додано через JS -->
   </div>
 
-  <!-- ... Ваш HTML без змін до <script> ... -->
+  <script>
+    const petitions = [
+      { id: "kinash", name: "Роман Кінаш 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/245246" },
+      { id: "lystopad", name: "Антон Листопад", url: "https://petition.president.gov.ua/petition/245654" },
+      { id: "klekach", name: "Василь Клекач", url: "https://petition.president.gov.ua/petition/244660" },
+      { id: "hned", name: "Олег Гнед", url: "https://petition.president.gov.ua/petition/244852" },
+      { id: "buzykov", name: "Юрій Бузіков 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244036" },
+      { id: "tanasyuk", name: "Богдан Танасюк 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243292" },
+      { id: "valko", name: "Руслан Валько 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244108" },
+      { id: "chmut", name: "Юрій Чмут 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243630" },
+    ];
 
-<script>
-  const petitions = [
-    { id: "kinash", name: "Роман Кінаш 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/245246" },
-    { id: "lystopad", name: "Антон Листопад", url: "https://petition.president.gov.ua/petition/245654" },
-    { id: "klekach", name: "Василь Клекач", url: "https://petition.president.gov.ua/petition/244660" },
-    { id: "hned", name: "Олег Гнед", url: "https://petition.president.gov.ua/petition/244852" },
-    { id: "buzykov", name: "Юрій Бузіков 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244036" },
-    { id: "tanasyuk", name: "Богдан Танасюк 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243292" },
-    { id: "valko", name: "Руслан Валько 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/244108" },
-    { id: "chmut", name: "Юрій Чмут 🔥🔥🔥", url: "https://petition.president.gov.ua/petition/243630" },
-  ];
+    const scriptURL = "https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyfZugwzmJdwacR9EB8KmFVuzE_OrtKkp4Jw5OJ9TB9ltRslLY6zubNX8owKT2AgBNuvQ/exec/exec"; // Замініть на ваше посилання
 
-  const API_URL = "http://localhost:3000";
+    // Записати візит
+    fetch(scriptURL)
+      .then(response => response.json())
+      .then(data => {
+        console.log("Visitor recorded:", data.message);
+        // Тут можна оновити лічильник відвідувачів, якщо потрібно
+      })
+      .catch(error => console.error("Error recording visitor:", error));
 
-  let stats = {
-    visitors: 0,
-    totalClicks: 0,
-    petitionClicks: {},
-  };
-
-  async function fetchStats() {
-    try {
-      const res = await fetch(API_URL + "/stats");
-      const data = await res.json();
-      stats = data;
-      updateUI();
-    } catch (e) {
-      console.error("Error fetching stats:", e);
-    }
-  }
-
-  async function sendVisit() {
-    try {
-      await fetch(API_URL + "/visit", { method: "POST" });
-      await fetchStats();
-    } catch (e) {
-      console.error("Error sending visit:", e);
-    }
-  }
-
-  async function trackClick(id) {
-    try {
-      await fetch(API_URL + "/click", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      await fetchStats();
-    } catch (e) {
-      console.error("Error tracking click:", e);
-    }
-  }
-
-  function updateUI() {
-    document.getElementById('visitor-count').textContent = stats.visitors;
-    document.getElementById('total-clicks').textContent = stats.totalClicks;
-
-    petitions.forEach(p => {
-      const count = stats.petitionClicks[p.id] || 0;
-      const span = document.getElementById(`click-${p.id}`);
-      if (span) span.textContent = count;
-    });
-  }
-
-  function renderPetitions() {
     const petitionList = document.getElementById("petition-list");
-    petitionList.innerHTML = "";
-    petitions.forEach(p => {
+
+    petitions.forEach((p) => {
       const div = document.createElement('div');
       div.className = 'petition';
       div.innerHTML = `
         <div><strong>${p.name}</strong></div>
-        <a href="${p.url}" target="_blank" rel="noopener noreferrer" onclick="trackClick('${p.id}')">${p.url}</a>
+        <a href="${p.url}" target="_blank" onclick="trackClick('${p.id}')">${p.url}</a>
         <div class="clicks">Переходів сьогодні: <span id="click-${p.id}">0</span></div>
       `;
       petitionList.appendChild(div);
     });
-  }
 
-  // Запускаємо
-  renderPetitions();
-  sendVisit(); // повідомляємо сервер про нового відвідувача
-  fetchStats(); // отримуємо початкові дані
-</script>
-
+    function trackClick(id) {
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify({ id }),
+        headers: { "Content-Type": "application/json" },
+      })
+        .then(response => response.text())
+        .then(data => {
+          console.log("Click tracked:", data);
+          const el = document.getElementById(`click-${id}`);
+          if (el) el.textContent = parseInt(el.textContent) + 1;
+          const total = document.getElementById("total-clicks");
+          total.textContent = parseInt(total.textContent) + 1;
+        })
+        .catch(error => console.error("Error tracking click:", error));
+    }
+  </script>
 </body>
 </html>
